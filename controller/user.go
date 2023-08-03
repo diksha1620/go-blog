@@ -27,7 +27,7 @@ func GetAllUsers(c *gin.Context) {
 	var users []models.User
 
 	// Fetch all users from the database.
-	database.DB.Find(&users)
+	database.DB.Find(&users) //adding
 
 	// Respond with the list of users in JSON format.
 	c.JSON(200, users)
