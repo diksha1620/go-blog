@@ -1,9 +1,11 @@
 package main
 
 import (
-	"github.com/dish1620/controller"
+	"os"
+
 	"github.com/dish1620/database"
-	"github.com/gin-gonic/gin"
+	Router "github.com/dish1620/routes"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
@@ -15,11 +17,24 @@ func init() {
 }
 
 func main() {
-	r := gin.Default()
-	r.POST("/createuser", controller.CreateUser)
-	r.GET("/users", controller.GetAllUsers)
-	r.GET("/users/:id", controller.GetUser)
-	r.DELETE("/deleteusers/:id", controller.DeleteUser)
+	godotenv.Load()              // Load env variables
+	database.ConnectToDatabase() // load db
+	// We want to get the router in async, thus a channel is required to return the router instance.
 
-	r.Run(":8080")
+	// var router = make(chan *gin.Engine)
+	// go routes.GetRouter(router)
+	// var port string = os.Getenv("SERVER_PORT")
+	// server_addr := fmt.Sprintf(":%s", port)
+	// r := <-router
+
+	router := Router.SetupRouter()
+
+	port := os.Getenv("port")
+
+	if port == "" {
+		port = "8080"
+	}
+
+	router.Run(":" + port)
+
 }
