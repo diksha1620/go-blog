@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/dish1620/database"
@@ -21,6 +22,39 @@ func CreateUser(c *gin.Context) {
 
 	returnresponse := services.Signup(c, &user)
 	helper.Respond(c.Writer, returnresponse)
+}
+
+func UpdateUser(c *gin.Context) {
+
+	var count int64
+	var user models.User
+	var existingUser models.User
+	var updateUser models.User
+
+	err := database.DB.Where("id = ?", c.Param("id")).First(&existingUser).Error
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user doesnot exists."})
+		return
+	}
+
+	if err := c.ShouldBindJSON(&updateUser); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if existingUser.Email == "" {
+		fmt.Println("not exist")
+		database.DB.Where("email = ?", updateUser.Email).First(&user).Count(&count)
+		if count != 0 {
+			c.JSON(404, gin.H{"error": "email linked with another user, pls try different email"})
+
+			return
+		}
+
+	}
+
+	database.DB.Model(&existingUser).Updates(updateUser)
+
 }
 
 func GetAllUsers(c *gin.Context) {

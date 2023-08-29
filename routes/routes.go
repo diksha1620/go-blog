@@ -12,6 +12,7 @@ func SetupRouter() *gin.Engine {
 	r.GET("/users", controller.GetAllUsers)
 	r.GET("/users/:id", controller.GetUser)
 	r.DELETE("/deleteusers/:id", controller.DeleteUser)
+	r.PATCH("/users/:id", controller.UpdateUser)
 
 	r.Run(":8080")
 	return r
