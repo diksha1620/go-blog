@@ -42,7 +42,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	if existingUser.Email == "" {
+	if existingUser.Email != "" {
 		fmt.Println("not exist")
 		database.DB.Where("email = ?", updateUser.Email).First(&user).Count(&count)
 		if count != 0 {
