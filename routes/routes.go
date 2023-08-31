@@ -8,7 +8,8 @@ import (
 func SetupRouter() *gin.Engine {
 
 	r := gin.Default()
-	r.POST("/createuser", controller.CreateUser)
+
+	r.POST("/register", controller.Register)
 	r.GET("/users", controller.GetAllUsers)
 	r.GET("/users/:id", controller.GetUser)
 	r.DELETE("/deleteusers/:id", controller.DeleteUser)

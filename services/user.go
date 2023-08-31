@@ -2,9 +2,9 @@ package services
 
 import (
 	"fmt"
+
 	"log"
 
-	"github.com/dish1620/database"
 	"github.com/dish1620/helper"
 	"github.com/dish1620/models"
 	"github.com/gin-gonic/gin"
@@ -13,7 +13,7 @@ import (
 
 func ValidateSignup(user *models.User) (map[string]interface{}, bool) {
 	temp := &models.User{}
-	err := database.DB.Table("users")
+	err := models.DB.Table("users")
 
 	//check for errors and duplicate emails
 	if user.Email != "" {
@@ -38,7 +38,11 @@ func Signup(c *gin.Context, user *models.User) map[string]interface{} {
 	if err != nil {
 		for _, err := range err.(validator.ValidationErrors) {
 			var newfield string
-			if err.Field() == "Email" {
+			if err.Field() == "FirstName" {
+				newfield = "FirstName"
+			} else if err.Field() == "LastName" {
+				newfield = "LastName"
+			} else if err.Field() == "Email" {
 				newfield = "Email"
 			} else if err.Field() == "UserName" {
 				newfield = "UserName"
@@ -66,17 +70,17 @@ func Signup(c *gin.Context, user *models.User) map[string]interface{} {
 	// Create or update the user based on the ID.
 	if user.ID != 0 {
 		log.Println("Update user")
-		database.DB.Model(user).Where("id = ?", user.ID).Updates(models.User{
+		models.DB.Model(user).Where("id = ?", user.ID).Updates(models.User{
 			Username: user.Username,
 			Email:    user.Email,
 		})
 
 		// Find the updated user and update the 'user' variable.
-		database.DB.Model(user).Where("id = ?", user.ID).Find(user)
+		models.DB.Model(user).Where("id = ?", user.ID).Find(user)
 	} else {
 		log.Println("Insert user")
 		// Create a new user record in the database.
-		database.DB.Create(user)
+		models.DB.Create(user)
 	}
 
 	// Return a success response.

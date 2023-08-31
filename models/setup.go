@@ -1,11 +1,10 @@
-package database
+package models
 
 import (
 	"fmt"
 	"log"
 	"os"
 
-	"github.com/dish1620/models"
 	"github.com/joho/godotenv"
 
 	"gorm.io/driver/postgres"
@@ -70,7 +69,7 @@ func ConnectToDatabase() {
 	}
 	fmt.Println("Migrating tables")
 	//normal migration
-	err = connection.Debug().AutoMigrate(&models.User{}, &models.Role{}, &models.Comment{}, &models.Post{})
+	err = connection.Debug().AutoMigrate(&User{}, &Role{}, &Comment{}, &Post{})
 	if err != nil {
 		fmt.Println("error in migration: ", err)
 		return
