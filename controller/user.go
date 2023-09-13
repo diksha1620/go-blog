@@ -16,27 +16,28 @@ type LoginStruct struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func Login(c *gin.Context) {
-	var input LoginStruct
+// func Login(c *gin.Context) {
+// 	var input LoginStruct
 
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	u := models.User{}
+// 	if err := c.ShouldBindJSON(&input); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	u := models.User{}
 
-	u.Username = input.Username
-	u.Password = input.Password
+// 	u.Username = input.Username
+// 	u.Password = input.Password
 
-	// token, err := models.LoginCheck(u.Username, u.Password)
+// 	// token, err := models.LoginCheck(u.Username, u.Password)
+// 	err := models.DB.Where("id =?", c.Param("id")).First(u).Error
 
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username or password is incorrect."})
-		return
-	}
+// 	if err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "username or password is incorrect."})
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
-}
+// 	c.JSON(http.StatusOK, gin.H{"token": token})
+// }
 
 func UpdateUser(c *gin.Context) {
 
@@ -69,6 +70,28 @@ func UpdateUser(c *gin.Context) {
 	models.DB.Model(&existingUser).Updates(updateUser)
 	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
 
+}
+
+func Register(c *gin.Context) {
+	var input models.User
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	u := models.User{}
+	u.FirstName = input.FirstName
+	u.Username = input.Username
+	u.Password = input.Password
+
+	// SaveUser should return an error if the user couldn't be saved.
+	if _, err := u.SaveUser(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User Created!"})
 }
 
 func CreateUser(c *gin.Context) {
