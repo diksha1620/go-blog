@@ -6,23 +6,20 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-func GenerateToken(k []byte, userData interface{}) (string, error) {
-	// Create the token
+func GenerateToken(username string) string {
+	// Define a secret key for signing the token
+	secretKey := []byte("AK8}<|Vw4>F&y!I8.O>&B}F(gd4N[i")
+
+	// Create a new token with claims
 	token := jwt.New(jwt.SigningMethodHS256)
-	// Set some claims
-	claims := make(jwt.MapClaims)
-	claims["userData"] = userData
-	claims["exp"] = time.Now().Add(time.Hour * 8760).Unix()
-	token.Claims = claims
-	// Sign and get the complete encoded token as a string
-	tokenString, err := token.SignedString(k)
-	return tokenString, err
-}
+	claims := token.Claims.(jwt.MapClaims)
+	claims["username"] = username
 
-func ValidateToken(t string, k string) (*jwt.Token, error) {
-	token, err := jwt.Parse(t, func(token *jwt.Token) (interface{}, error) {
-		return []byte(k), nil
-	})
+	// Set an expiration time for the token (e.g., 1 day)
+	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 
-	return token, err
+	// Sign the token with the secret key
+	tokenString, _ := token.SignedString(secretKey)
+
+	return tokenString
 }

@@ -6,38 +6,17 @@ import (
 	"net/http"
 
 	"github.com/dish1620/helper"
+	"github.com/dish1620/middleware"
 	"github.com/dish1620/models"
 	"github.com/dish1620/services"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginStruct struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
-
-// func Login(c *gin.Context) {
-// 	var input LoginStruct
-
-// 	if err := c.ShouldBindJSON(&input); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-// 		return
-// 	}
-// 	u := models.User{}
-
-// 	u.Username = input.Username
-// 	u.Password = input.Password
-
-// 	// token, err := models.LoginCheck(u.Username, u.Password)
-// 	err := models.DB.Where("id =?", c.Param("id")).First(u).Error
-
-// 	if err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "username or password is incorrect."})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, gin.H{"token": token})
-// }
 
 func UpdateUser(c *gin.Context) {
 
@@ -71,27 +50,32 @@ func UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
 
 }
-
-func Register(c *gin.Context) {
-	var input models.User
+func Login(c *gin.Context) {
+	var input LoginStruct
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	u := models.User{}
-	u.FirstName = input.FirstName
-	u.Username = input.Username
-	u.Password = input.Password
-
-	// SaveUser should return an error if the user couldn't be saved.
-	if _, err := u.SaveUser(); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// Retrieve the user by username from the database
+	var user models.User
+	if err := models.DB.Where("username = ?", input.Username).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User Created!"})
+	// Compare the hashed password with the provided password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	// Generate a JWT token
+	token := middleware.GenerateToken(user.Username)
+
+	// Return the token in the response
+	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 func CreateUser(c *gin.Context) {
@@ -104,6 +88,12 @@ func CreateUser(c *gin.Context) {
 
 	returnresponse := services.Signup(c, &user)
 	helper.Respond(c.Writer, returnresponse)
+
+	// After successfully creating the user, generate a JWT token
+	token := middleware.GenerateToken(user.Username)
+
+	// Return the token in the response
+	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 func GetAllUsers(c *gin.Context) {

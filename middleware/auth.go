@@ -1,70 +1,44 @@
 package middleware
 
 import (
-	"strings"
+	"fmt"
+	"net/http"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
-func AuthHandlerAdmin() gin.HandlerFunc {
+func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token := c.Request.Header.Get("Authorization")
-		// Check if toke in correct format
-		// ie Bearer: xx03xllasx
-		b := "Bearer "
-		if !strings.Contains(token, b) {
-			c.JSON(403, gin.H{"message": "Your request is not authorized", "status": 403})
-			c.Abort()
-			return
-		}
-		t := strings.Split(token, b)
-		if len(t) < 2 {
-			c.JSON(403, gin.H{"message": "An authorization token was not supplied", "status": 403})
-			c.Abort()
-			return
-		}
-		// Validate token
-		valid, err := ValidateToken(t[1], SigningKey)
-		if err != nil {
-			c.JSON(403, gin.H{"message": "Invalid authorization token", "status": 403})
+		tokenString := c.GetHeader("Authorization")
+		if tokenString == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 			c.Abort()
 			return
 		}
 
-		// set userId Variable
-		c.Set("userData", valid.Claims.(jwt.MapClaims)["userData"])
-		c.Next()
-	}
-}
+		// Parse and validate the token
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// Verify the signing method and return the secret key
+			if token.Method != jwt.SigningMethodHS256 {
+				return nil, fmt.Errorf("Invalid signing method")
+			}
+			return []byte("AK8}<|Vw4>F&y!I8.O>&B}F(gd4N[i"), nil
+		})
 
-func AuthHandlerAPI() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		token := c.Request.Header.Get("Authorization")
-		// Check if toke in correct format
-		// ie Bearer: xx03xllasx
-		b := "Bearer "
-		if !strings.Contains(token, b) {
-			c.JSON(403, gin.H{"message": "Your request is not authorized", "status": 403})
-			c.Abort()
-			return
-		}
-		t := strings.Split(token, b)
-		if len(t) < 2 {
-			c.JSON(403, gin.H{"message": "An authorization token was not supplied", "status": 403})
-			c.Abort()
-			return
-		}
-		// Validate token
-		valid, err := ValidateToken(t[1], SigningKey)
-		if err != nil {
-			c.JSON(403, gin.H{"message": "Invalid authorization token", "status": 403})
+		if err != nil || !token.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			c.Abort()
 			return
 		}
 
-		// set userId Variable
-		c.Set("userData", valid.Claims.(jwt.MapClaims)["userData"])
+		// Token is valid, you can access claims from the token like this:
+		// claims := token.Claims.(jwt.MapClaims)
+		// username := claims["username"].(string)
+
+		// You can also store claims or user data in the Gin context if needed
+		// c.Set("username", username)
+
 		c.Next()
 	}
 }
