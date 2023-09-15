@@ -2,13 +2,16 @@ package services
 
 import (
 	"fmt"
+	"strings"
 
 	"log"
 
 	"github.com/dish1620/helper"
+	"github.com/dish1620/middleware"
 	"github.com/dish1620/models"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
+	"gorm.io/gorm"
 )
 
 func ValidateSignup(user *models.User) (map[string]interface{}, bool) {
@@ -86,4 +89,65 @@ func Signup(c *gin.Context, user *models.User) map[string]interface{} {
 	// Return a success response.
 	response := helper.Message(200, "User created/updated successfully.")
 	return response
+}
+
+type UserLoginResponse struct {
+	ID       uint   `gorm:"primary_key" json:"id"`
+	UserName string `json:"user_name,omitempty"`
+	Email    string `json:"email,omitempty" validate:"required,email"`
+}
+
+func UserLogin(email, password string) map[string]interface{} {
+	validate := validator.New()
+	user := &models.User{}
+
+	pass_errs := validate.Var(password, "required")
+	if pass_errs != nil {
+		response := helper.Message(400, "Password cannot be blank.")
+		return response
+	}
+	checkEmail := strings.Contains(email, "@")
+	if checkEmail == true {
+		errs := validate.Var(email, "required,email")
+
+		if errs != nil {
+			for _, err := range errs.(validator.ValidationErrors) {
+				if err.ActualTag() == "required" {
+					response := helper.Message(1, "Email cannot be blank.")
+					return response
+				} else if err.ActualTag() == "email" {
+					response := helper.Message(400, "Please enter a valid email address.")
+					return response
+				}
+			}
+		}
+		err := models.DB.Table("users").Where("email = ?", email).First(user).Error
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return helper.Message(400, "Your email address is not registered with us. Please signup to create a new account.")
+			}
+			return helper.Message(400, "Connection error. Please retry.")
+		}
+
+		// err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+		// if err != nil && (err == bcrypt.ErrMismatchedHashAndPassword || err == bcrypt.ErrHashTooShort) { //Password does not match!
+		// 	return helper.Message(400, "The password you entered is incorrect. Please check again or click on forgot password to reset your password.")
+		// }
+
+	}
+	token, err := middleware.GenerateToken(user.Username)
+	if err != nil {
+		return helper.Message(400, "Failed to generate token")
+	}
+
+	userResponse := UserLoginResponse{
+		ID:       user.ID,
+		UserName: user.Username,
+		Email:    user.Email,
+	}
+
+	resp := helper.Message(200, "Success")
+	resp["data"] = userResponse
+	resp["token"] = token
+	return resp
 }

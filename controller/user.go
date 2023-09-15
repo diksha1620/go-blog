@@ -5,17 +5,33 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dish1620/helper"
-	"github.com/dish1620/middleware"
 	"github.com/dish1620/models"
 	"github.com/dish1620/services"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginStruct struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+func Login(c *gin.Context) {
+
+	var v interface{}
+	err := json.NewDecoder(c.Request.Body).Decode(&v)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Request"})
+		return
+	}
+
+	m := v.(map[string]interface{})
+	email := m["email"].(string)
+	password := m["password"].(string)
+
+	resp := services.UserLogin(email, password)
+
+	c.JSON(http.StatusOK, gin.H{"response": resp})
+
 }
 
 func UpdateUser(c *gin.Context) {
@@ -36,7 +52,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	if existingUser.Email != "" {
+	if existingUser.Email != "" && existingUser.Email != updateUser.Email {
 		fmt.Println("not exist")
 		models.DB.Where("email = ?", updateUser.Email).First(&user).Count(&count)
 		if count != 0 {
@@ -50,50 +66,19 @@ func UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
 
 }
-func Login(c *gin.Context) {
-	var input LoginStruct
-
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Retrieve the user by username from the database
-	var user models.User
-	if err := models.DB.Where("username = ?", input.Username).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	// Compare the hashed password with the provided password
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	// Generate a JWT token
-	token := middleware.GenerateToken(user.Username)
-
-	// Return the token in the response
-	c.JSON(http.StatusOK, gin.H{"token": token})
-}
 
 func CreateUser(c *gin.Context) {
 	var user models.User
 	err := json.NewDecoder(c.Request.Body).Decode(&user)
 	if err != nil {
-		helper.Respond(c.Writer, helper.Message(400, "Invalid request"))
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid user ID"})
 		return
 	}
 
 	returnresponse := services.Signup(c, &user)
-	helper.Respond(c.Writer, returnresponse)
 
-	// After successfully creating the user, generate a JWT token
-	token := middleware.GenerateToken(user.Username)
+	c.JSON(http.StatusOK, gin.H{"response": returnresponse})
 
-	// Return the token in the response
-	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 func GetAllUsers(c *gin.Context) {
