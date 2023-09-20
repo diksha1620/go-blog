@@ -3,6 +3,7 @@ package models
 import (
 	"html"
 	"strings"
+
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -10,20 +11,21 @@ import (
 type User struct {
 	gorm.Model
 	// ID       int `json:"id" gorm:"primary key"`
-	FirstName string `json:"firstname" binding:"required"`
-	LastName  string `json:"lastname" binding:"required"`
-	Username  string `json:"Username" binding:"required"`
-	RoleId    int
-	Email     string `json:"email" binding:"required,email"`
-	Password  string `json:"password"`
+	FirstName       string `json:"firstname" binding:"required"`
+	LastName        string `json:"lastname" binding:"required"`
+	Username        string `json:"Username" binding:"required"`
+	RoleId          int
+	Email           string `json:"email" binding:"required,email"`
+	Password        string `json:"password"`
+	ConfirmPassword string `json:"Confirmpassword"`
 }
 
 type Post struct {
 	gorm.Model
 	// ID        int `json:"id" gorm:"primary key"`
-	UserID  int    `json:"user_id" gorm:"foreignKey:User" referance:"user"`
-	Title   string `json:"title" gorm:"not null"`
-	Content string `json:"content"`
+	UserID int    `json:"user_id" gorm:"foreignKey:User" referance:"user"`
+	Title  string `json:"title" gorm:"not null"`
+	Body   string `json:"content"`
 	// CreatedAt time.Time `json:"created_at" gorm:"not null" sql:"DEFAULT:CURRENT_TIMESTAMP"`
 	// UpdatedAt time.Time `json:"updated_at" gorm:"not null" sql:"DEFAULT:CURRENT_TIMESTAMP"`
 }
@@ -32,7 +34,7 @@ type Comment struct {
 	// ID        int `json:"id" gorm:"primary key"`
 	UserID  int
 	PostID  int
-	Content string `json:"content"`
+	Comment string `json:"comment"`
 	// CreatedAt time.Time `json:"created_at"`
 }
 type Role struct {

@@ -18,6 +18,7 @@ func GenerateToken(username string) (string, error) {
 	claims := &Claims{
 		Username: username,
 		StandardClaims: jwt.StandardClaims{
+
 			ExpiresAt: expirationTime.Unix(),
 		},
 	}
@@ -30,6 +31,7 @@ func GenerateToken(username string) (string, error) {
 }
 
 func ValidateToken(tokenString string) (*Claims, error) {
+
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return jwtKey, nil
 	})

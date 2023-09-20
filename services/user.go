@@ -70,21 +70,9 @@ func Signup(c *gin.Context, user *models.User) map[string]interface{} {
 		return resp
 	}
 
-	// Create or update the user based on the ID.
-	if user.ID != 0 {
-		log.Println("Update user")
-		models.DB.Model(user).Where("id = ?", user.ID).Updates(models.User{
-			Username: user.Username,
-			Email:    user.Email,
-		})
-
-		// Find the updated user and update the 'user' variable.
-		models.DB.Model(user).Where("id = ?", user.ID).Find(user)
-	} else {
-		log.Println("Insert user")
-		// Create a new user record in the database.
-		models.DB.Create(user)
-	}
+	log.Println("Insert user")
+	// Create a new user record in the database.
+	models.DB.Create(user)
 
 	// Return a success response.
 	response := helper.Message(200, "User created/updated successfully.")
@@ -102,6 +90,7 @@ func UserLogin(email, password string) map[string]interface{} {
 	user := &models.User{}
 
 	pass_errs := validate.Var(password, "required")
+
 	if pass_errs != nil {
 		response := helper.Message(400, "Password cannot be blank.")
 		return response
